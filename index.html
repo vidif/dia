@@ -80,6 +80,9 @@ textarea{width:100%;background:var(--surface2);border:1px solid var(--border);bo
 .an-row .l{color:var(--muted)}
 .an-row .v{font-family:'IBM Plex Mono',monospace;text-align:right}
 .an-note{font-size:13px;color:var(--muted);margin-top:10px}
+.sched-row input[type=number]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:8px;font-family:'IBM Plex Mono',monospace}
+.obs{font-size:14px;margin:8px 0;padding-left:12px;border-left:2px solid var(--fuerza)}
+.dl-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 16px;font-size:14px;cursor:pointer;font-family:inherit}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
 .chip{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 11px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer}
 .chip.on{background:rgba(111,169,125,.18);border-color:var(--ok);color:var(--ok)}
@@ -130,6 +133,15 @@ textarea{width:100%;background:var(--surface2);border:1px solid var(--border);bo
     <div id="mealRows"></div>
     <button class="addmeal" id="addMeal" type="button">+ agregar comida</button>
 
+    <div class="subhead">Consumo total del día (de tu app de conteo)</div>
+    <div class="sched-row">
+      <div><label for="vKcalTot">Kcal totales</label><input type="number" inputmode="decimal" id="vKcalTot" placeholder="ej. 1800"></div>
+      <div><label for="vProt">Proteína (g)</label><input type="number" inputmode="decimal" id="vProt" placeholder="160"></div>
+      <div><label for="vCarb">Carbos (g)</label><input type="number" inputmode="decimal" id="vCarb" placeholder="120"></div>
+      <div><label for="vGrasa">Grasa (g)</label><input type="number" inputmode="decimal" id="vGrasa" placeholder="72"></div>
+    </div>
+    <div class="an-note" id="kcalCalc" style="margin:0 0 6px;color:var(--text)"></div>
+
     <div class="subhead">Horarios de entrenamiento</div>
     <div class="sched-row" id="trainSched"></div>
 
@@ -156,6 +168,12 @@ textarea{width:100%;background:var(--surface2);border:1px solid var(--border);bo
   </div>
 
   <div class="card">
+    <h2>Análisis de alimentación y valoración</h2>
+    <div id="alimBox"></div>
+    <div class="an-note">Calculado con tus kcal, macros y horarios de comida. Compara contra los objetivos de tu plan (1,800 kcal, 160 g de proteína) con reglas simples: son observaciones, no un diagnóstico.</div>
+  </div>
+
+  <div class="card">
     <h2>Análisis de sueño</h2>
     <div id="suenoBox"></div>
     <div class="an-note">Cada registro es la noche que terminó esa mañana. Meta de referencia de tu plan: 7–9 h. Horarios "consistentes" = rango de hasta 60 min entre noches.</div>
@@ -170,6 +188,16 @@ textarea{width:100%;background:var(--surface2);border:1px solid var(--border);bo
     <h2>Progreso — 49 días</h2>
     <div class="grid49" id="grid49"></div>
     <div class="wk-avg" id="wkAvg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Historial de alimentación para analizar con IA</h2>
+    <p style="margin:0 0 12px;font-size:14px;color:var(--muted)">Descarga un día por día con kcal, macros, horarios y detalle de comidas. El archivo para IA incluye el contexto de tu plan y las instrucciones listas: solo súbelo o pégalo en la IA que prefieras.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="btnAI" class="dl-btn">Descargar para IA (.md)</button>
+      <button id="btnCSV" class="dl-btn">Descargar tabla (.csv)</button>
+    </div>
+    <div class="saved" id="aiMsg"></div>
   </div>
 
   <div class="card">
@@ -248,7 +276,7 @@ let currentKey = todayKey;
 function timeToMin(t){ if(!t) return null; const p=t.split(':'); return (+p[0])*60+(+p[1]); }
 function minToTime(m){ m=((Math.round(m)%1440)+1440)%1440; const h=Math.floor(m/60), mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
 
-const FIELD_IDS = ['cPeso','vPeso','cPasos','vPasos','cCardio','vCardioMin','cEntreno','cKcal','cSueno','vSueno','cCintura','vCintura','horaPesas','horaCardio','horaDormir','horaDespertar','calidadSueno','despertares'];
+const FIELD_IDS = ['cPeso','vPeso','cPasos','vPasos','cCardio','vCardioMin','cEntreno','cKcal','cSueno','vSueno','cCintura','vCintura','horaPesas','horaCardio','horaDormir','horaDespertar','calidadSueno','despertares','vKcalTot','vProt','vCarb','vGrasa'];
 
 function persist(key){
   const e = {};
@@ -343,14 +371,16 @@ function renderDay(n){
   currentComidas = (e.comidas || []).map(c=>({hora:c.hora||'',desc:c.desc||''}));
   renderMeals();
 
-  ['cPeso','vPeso','cPasos','vPasos','cCardio','vCardioMin','cEntreno','cKcal','cSueno','vSueno','cCintura','vCintura','horaPesas','horaCardio','horaDormir','horaDespertar','calidadSueno','despertares'].forEach(id=>{
+  ['cPeso','vPeso','cPasos','vPasos','cCardio','vCardioMin','cEntreno','cKcal','cSueno','vSueno','cCintura','vCintura','horaPesas','horaCardio','horaDormir','horaDespertar','calidadSueno','despertares','vKcalTot','vProt','vCarb','vGrasa'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el || e[id]===undefined) return;
     if(el.type==='checkbox') el.checked = e[id]; else el.value = e[id];
   });
   document.getElementById('notas').value = e.notas || '';
-  ['horaDormir','horaDespertar','calidadSueno','despertares'].forEach(id=>{ document.getElementById(id).value = e[id] || ''; });
+  ['horaDormir','horaDespertar','calidadSueno','despertares','vKcalTot','vProt','vCarb','vGrasa'].forEach(id=>{ document.getElementById(id).value = e[id] || ''; });
   updateSleepCalc();
+  updateKcalCalc();
+  ['vKcalTot','vProt','vCarb','vGrasa'].forEach(id=>{ document.getElementById(id).onchange = ()=>{ updateKcalCalc(); persist(key); }; });
 
   document.querySelectorAll('#regFields input, #trainSched input').forEach(el=>{
     el.addEventListener('change', ()=>persist(key));
@@ -490,6 +520,7 @@ function renderSueno(){
 
 function renderAnalisis(){
   renderSueno();
+  renderAlim();
   const box = document.getElementById('analisisBox');
   const entries = Object.values(state.checkins);
   const hasAny = entries.some(e=>e && (e.vPeso||e.cEntreno||e.cKcal||(e.comidas&&e.comidas.length)));
@@ -535,6 +566,215 @@ initSleepChips();
 document.getElementById('prevDay').addEventListener('click', ()=>{ if(expDay>1){expDay--; renderDay(expDay);} });
 document.getElementById('nextDay').addEventListener('click', ()=>{ if(expDay<49){expDay++; renderDay(expDay);} });
 document.getElementById('jumpToday').addEventListener('click', ()=>{ expDay = Math.min(Math.max(dayNum,1),49); renderDay(expDay); });
+
+function numv(x){ const n = parseFloat(x); return isNaN(n) ? null : n; }
+const DIAS_ES = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+
+function updateKcalCalc(){
+  const g = id=>numv(document.getElementById(id).value);
+  const k=g('vKcalTot'), p=g('vProt'), c=g('vCarb'), f=g('vGrasa');
+  let t='';
+  if(k!==null){ const d=Math.round(k-1800); t='Objetivo 1,800 kcal: '+(d>0?'+':'')+d+' kcal'+(Math.abs(d)<=180?' · dentro de ±10%':''); }
+  if(p!==null && c!==null && f!==null) t += (t?' · ':'')+'tus macros suman ≈'+Math.round(p*4+c*4+f*9)+' kcal';
+  document.getElementById('kcalCalc').textContent = t || 'Captura el total del día de tu app de conteo (o tu suma manual).';
+}
+
+function mealsInfo(e){
+  const ms = (e.comidas||[]).filter(c=>c.hora||c.desc);
+  const mins = ms.map(c=>timeToMin(c.hora)).filter(m=>m!==null);
+  return {ms:ms, count:ms.length, first:mins.length?minToTime(Math.min(...mins)):'', last:mins.length?minToTime(Math.max(...mins)):'', win:mins.length>1?(Math.max(...mins)-Math.min(...mins))/60:null};
+}
+function alimRows(){
+  return Object.keys(state.checkins).sort().map(k=>{
+    const e = state.checkins[k] || {};
+    const d = new Date(k+'T00:00:00');
+    const n = Math.round((d-start)/86400000)+1;
+    return {k:k, e:e, d:d, n:n, wk:Math.ceil(n/7), dow:d.getDay(), m:mealsInfo(e),
+      kcal:numv(e.vKcalTot), p:numv(e.vProt), c:numv(e.vCarb), g:numv(e.vGrasa),
+      peso:numv(e.vPeso), pasos:numv(e.vPasos), sue:sleepDur(e)};
+  });
+}
+function macroKcal(r){ return (r.p!==null && r.c!==null && r.g!==null) ? r.p*4+r.c*4+r.g*9 : null; }
+
+function alimCompute(){
+  const A = alimRows();
+  const N = A.filter(r=>r.kcal!==null||r.p!==null||r.c!==null||r.g!==null||r.m.count>0);
+  const T = N.filter(r=>r.wk!==4);
+  const K = T.filter(r=>r.kcal!==null);
+  const lines=[], obs=[];
+  const elapsed = Math.max(1, Math.min(dayNum,49));
+  const avg = a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const pc = (a,b)=>Math.round(100*a/b)+'%';
+  const sg = x=>(x>0?'+':'')+Math.round(x);
+  const hasW4 = N.some(r=>r.wk===4);
+
+  if(K.length){
+    const ks=K.map(r=>r.kcal), ka=avg(ks);
+    const within=K.filter(r=>r.kcal>=1620&&r.kcal<=1980).length, over=K.filter(r=>r.kcal>1980).length, under=K.filter(r=>r.kcal<1620).length;
+    lines.push(['Días con kcal registradas', K.length+' de '+elapsed+' días transcurridos']);
+    lines.push(['Kcal promedio', Math.round(ka)+' (objetivo 1,800: '+sg(ka-1800)+')']);
+    lines.push(['Kcal mínimo / máximo', Math.round(Math.min(...ks))+' / '+Math.round(Math.max(...ks))]);
+    lines.push(['Dentro de ±10% del objetivo (1,620–1,980)', within+' de '+K.length+' ('+pc(within,K.length)+')']);
+    lines.push(['Sobre / bajo ese rango', over+' / '+under]);
+  }
+  const ps=T.map(r=>r.p).filter(x=>x!==null), cs=T.map(r=>r.c).filter(x=>x!==null), gs=T.map(r=>r.g).filter(x=>x!==null);
+  if(ps.length) lines.push(['Proteína promedio', Math.round(avg(ps))+' g (objetivo 160) · ≥150 g en '+ps.filter(x=>x>=150).length+' de '+ps.length+' días']);
+  if(cs.length) lines.push(['Carbohidratos promedio', Math.round(avg(cs))+' g (objetivo 115–125) · ±15% en '+cs.filter(x=>x>=102&&x<=138).length+' de '+cs.length+' días']);
+  if(gs.length) lines.push(['Grasa promedio', Math.round(avg(gs))+' g (objetivo 70–75) · ±15% en '+gs.filter(x=>x>=62&&x<=83).length+' de '+gs.length+' días']);
+  const M = T.filter(r=>macroKcal(r)!==null);
+  if(M.length){
+    const tp=M.reduce((s,r)=>s+r.p*4,0), tc=M.reduce((s,r)=>s+r.c*4,0), tg=M.reduce((s,r)=>s+r.g*9,0), tt=tp+tc+tg;
+    if(tt>0) lines.push(['Reparto calórico por macros', 'P '+Math.round(100*tp/tt)+'% · C '+Math.round(100*tc/tt)+'% · G '+Math.round(100*tg/tt)+'%']);
+  }
+  const KM = T.filter(r=>r.kcal!==null && macroKcal(r)!==null && r.kcal>0);
+  let mismatch = null;
+  if(KM.length){
+    mismatch = avg(KM.map(r=>Math.abs(macroKcal(r)-r.kcal)/r.kcal*100));
+    lines.push(['Kcal totales vs kcal calculadas por macros', 'diferencia promedio '+mismatch.toFixed(0)+'% (n='+KM.length+')']);
+  }
+  const withM = N.filter(r=>r.m.count>0);
+  if(withM.length){
+    lines.push(['Comidas por día (promedio)', avg(withM.map(r=>r.m.count)).toFixed(1)+' (n='+withM.length+' días)']);
+    const fs=timeStats(withM.map(r=>r.m.first)), ls=timeStats(withM.map(r=>r.m.last));
+    if(fs && ls) lines.push(['Primera / última comida (promedio)', fs.avg+' / '+ls.avg]);
+    const wins=withM.map(r=>r.m.win).filter(x=>x!==null);
+    if(wins.length) lines.push(['Ventana de alimentación (promedio)', avg(wins).toFixed(1)+' h']);
+    const lastArr=withM.filter(r=>r.m.last), late=lastArr.filter(r=>timeToMin(r.m.last)>1200).length;
+    if(lastArr.length) lines.push(['Última comida después de las 20:00', late+' de '+lastArr.length+' días ('+pc(late,lastArr.length)+')']);
+    if(lastArr.length>=3 && late/lastArr.length>=0.4) obs.push('Comes después de las 20:00 en '+pc(late,lastArr.length)+' de tus días con horarios. Tu palanca de sueño es la última comida antes de las 8 pm: si duermes peor esas noches, este es el patrón a corregir primero.');
+  }
+  const wd=K.filter(r=>r.dow>=1&&r.dow<=5), we=K.filter(r=>r.dow===0||r.dow===6);
+  if(wd.length>=2 && we.length>=2){
+    const a=avg(wd.map(r=>r.kcal)), b=avg(we.map(r=>r.kcal));
+    lines.push(['Kcal entre semana vs fin de semana', Math.round(a)+' / '+Math.round(b)+' ('+sg(b-a)+')']);
+    if(Math.abs(b-a)/a>0.15) obs.push('Tu consumo del fin de semana ('+Math.round(b)+' kcal) difiere '+Math.round(100*Math.abs(b-a)/a)+'% del de entre semana ('+Math.round(a)+' kcal). Un fin de semana distinto puede borrar buena parte del déficit semanal.');
+  }
+  // semanas
+  const wset={}; A.forEach(r=>{ if(r.kcal!==null||r.peso!==null) wset[r.wk]=1; });
+  Object.keys(wset).map(Number).sort((a,b)=>a-b).forEach(w=>{
+    const kk=N.filter(r=>r.wk===w&&r.kcal!==null).map(r=>r.kcal), pp=A.filter(r=>r.wk===w&&r.peso!==null).map(r=>r.peso);
+    lines.push(['Semana '+w+(w===4?' (descarga)':''), (kk.length?'kcal '+Math.round(avg(kk))+' (n='+kk.length+')':'sin kcal')+' · '+(pp.length?'peso '+avg(pp).toFixed(1)+' kg (n='+pp.length+')':'sin peso')]);
+  });
+  // valoración
+  if(K.length>=3){
+    const rec=K.slice(-7), ra=avg(rec.map(r=>r.kcal));
+    if(ra>1980) obs.push('En tus últimos '+rec.length+' días con kcal, el promedio fue '+Math.round(ra)+' kcal, por encima de tu rango objetivo (hasta 1,980). Antes de recortar más, revisa porciones, aceites, bebidas y fines de semana, como marca tu plan.');
+    else if(ra<1620) obs.push('En tus últimos '+rec.length+' días con kcal, el promedio fue '+Math.round(ra)+' kcal, por debajo de tu rango (desde 1,620): el déficit es mayor al previsto. Vigila fuerza, hambre y sueño, y no recortes la proteína.');
+    else obs.push('En tus últimos '+rec.length+' días con kcal, el promedio fue '+Math.round(ra)+' kcal: dentro de ±10% de tu objetivo de 1,800.');
+  }
+  if(ps.length>=3){
+    const pr=avg(T.filter(r=>r.p!==null).slice(-7).map(r=>r.p));
+    if(pr<150) obs.push('Tu proteína reciente promedia '+Math.round(pr)+' g, debajo de tu rango de 150–170 g. Es la prioridad del plan para conservar músculo: reparte 3–4 comidas y asegura una fuente de proteína en cada una.');
+    else obs.push('Tu proteína reciente promedia '+Math.round(pr)+' g: dentro o por encima del mínimo de 150 g de tu plan.');
+  }
+  if(mismatch!==null && mismatch>10) obs.push('Tus kcal totales y las que resultan de tus macros difieren en promedio '+mismatch.toFixed(0)+'%. Revisa cómo capturas (alcohol, fibra, redondeos o alimentos sin registrar) para que el análisis sea confiable.');
+  // tendencia de peso por semana (excluye semana 4)
+  const Wk={}; A.forEach(r=>{ if(r.peso!==null) (Wk[r.wk]=Wk[r.wk]||[]).push(r.peso); });
+  const Wa={}; Object.keys(Wk).forEach(w=>{ if(Wk[w].length>=3 && +w!==4) Wa[w]=avg(Wk[w]); });
+  const ws=Object.keys(Wa).map(Number).sort((a,b)=>a-b), tr=[];
+  ws.forEach(w=>{ if(Wa[w+1]!==undefined) tr.push({a:w,b:w+1,loss:Wa[w]-Wa[w+1]}); });
+  if(tr.length){
+    const l=tr[tr.length-1], p=tr.length>1?tr[tr.length-2]:null;
+    const txt='Peso promedio semana '+l.a+' → '+l.b+': '+(l.loss>0?'baja ':'sube ')+Math.abs(l.loss).toFixed(2)+' kg.';
+    if(p && p.b===l.a && l.loss<0.3 && p.loss<0.3) obs.push(txt+' Es la segunda semana seguida por debajo de 0.3 kg/semana. Tu regla: primero verifica adherencia real (calorías, pasos, porciones, fines de semana, bebidas y aceites, sueño, entrenamiento) y solo después un ajuste pequeño (más actividad o una ligera reducción de calorías).');
+    else if(p && p.b===l.a && l.loss>1 && p.loss>1) obs.push(txt+' Llevas dos semanas por encima de 1 kg/semana: si además notas caída de fuerza, hambre intensa, mal sueño o fatiga, el déficit podría ser demasiado agresivo.');
+    else if(l.loss<0.3) obs.push(txt+' Aún es una sola semana por debajo de 0.3 kg: tu regla pide esperar una segunda semana antes de ajustar.');
+    else obs.push(txt+' Ritmo dentro de lo previsto (0.3–1 kg/semana).');
+  } else {
+    obs.push('Para valorar la tendencia de peso necesitas al menos 3 pesajes en cada una de dos semanas seguidas.');
+  }
+  if(hasW4) obs.push('La semana 4 (descarga, a mantenimiento) se excluye de las comparaciones contra tu objetivo de 1,800 kcal.');
+  if(elapsed>=4 && N.length < elapsed*0.5) obs.push('Solo tienes datos de alimentación en '+N.length+' de '+elapsed+' días transcurridos. Con menos de la mitad de los días registrados, las conclusiones son poco confiables.');
+  return {A:A, N:N, lines:lines, obs:obs, K:K};
+}
+
+function renderAlim(){
+  const box = document.getElementById('alimBox'); if(!box) return;
+  const S = alimCompute();
+  if(!S.N.length){ box.innerHTML='<div class="an-note" style="margin:0">Captura las kcal totales del día (y comidas con su hora) para ver aquí tu análisis de consumo y valoración.</div>'; return; }
+  let h = S.lines.map(l=>'<div class="an-row"><span class="l">'+l[0]+'</span><span class="v">'+l[1]+'</span></div>').join('');
+  h += '<div class="subhead" style="margin-top:16px">Valoración</div>';
+  h += S.obs.map(o=>'<p class="obs">'+o+'</p>').join('');
+  box.innerHTML = h;
+}
+
+function dlFile(name, text, mime){
+  const blob = new Blob([text], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function csvCell(v){ v = (v===null||v===undefined) ? '' : String(v); return /[",;\n\r]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function fx(x,dp){ return (x===null||x===undefined||isNaN(x)) ? '' : (+x).toFixed(dp||0); }
+
+function buildCSV(S){
+  const head = ['fecha','dia_plan','semana_plan','dia_semana','tipo_dia','kcal_total','proteina_g','carbos_g','grasa_g','kcal_calculadas_por_macros','num_comidas','primera_comida','ultima_comida','ventana_horas','detalle_comidas','kcal_y_proteina_en_objetivo','peso_kg','pasos','caminata_inclinada_min','horas_sueno','notas'];
+  const out = [head.join(',')];
+  S.N.forEach(r=>{
+    const e=r.e, mk=macroKcal(r);
+    out.push([r.k,r.n,r.wk,DIAS_ES[r.dow],DAY_TYPES[r.dow].label,fx(r.kcal),fx(r.p,1),fx(r.c,1),fx(r.g,1),fx(mk),r.m.count,r.m.first,r.m.last,fx(r.m.win,1),
+      r.m.ms.map(c=>(c.hora||'--:--')+' '+(c.desc||'')).join(' | '), e.cKcal?'si':'no', fx(r.peso,1), fx(r.pasos), e.vCardioMin||'', r.sue?fx(r.sue/60,2):'', e.notas||''].map(csvCell).join(','));
+  });
+  return '\ufeff'+out.join('\r\n');
+}
+
+function buildMD(S){
+  const L=[];
+  L.push('# Historial de alimentación — plan de 49 días');
+  L.push('Generado: '+new Date().toLocaleString('es-MX')+' · inicio del plan: '+state.start+' · día actual del plan: '+Math.min(Math.max(dayNum,1),49)+' de 49');
+  L.push('');
+  L.push('## Contexto del plan (objetivos)');
+  L.push('- Meta: maximizar pérdida de grasa preservando masa muscular y fuerza, con un déficit sostenible (no extremo).');
+  L.push('- Kcal objetivo ≈ 1,800/día (rango 1,750–1,850). TDEE estimado 2,200–2,500 kcal (aún por validar con los datos).');
+  L.push('- Macros objetivo: proteína ≈ 160 g (150–170), grasa 70–75 g, carbohidratos 115–125 g, fibra 25–30 g, agua 2.5–3 L.');
+  L.push('- Entrenamiento: pesas lun, mar, jue, vie; caminata inclinada 25–35 min tras pesas lun y jue; caminata inclinada 45–60 min mié y sáb; domingo descanso.');
+  L.push('- Palanca de sueño: última comida antes de las 8 pm y pantallas fuera antes de las 10 pm.');
+  L.push('- La semana 4 es de descarga (calorías a mantenimiento y menos volumen de pesas): no compararla contra 1,800 kcal.');
+  L.push('- Peso: se evalúa con promedio semanal, no con un día suelto.');
+  L.push('');
+  L.push('## Instrucciones para la IA');
+  L.push('Analiza estos datos como asesor de nutrición deportiva y hábitos. Con base SOLO en lo que aparece aquí:');
+  L.push('1. Evalúa adherencia a kcal y macros (promedios, variabilidad, días fuera de rango) y en qué días o semanas se rompe el patrón.');
+  L.push('2. Analiza horarios: primera y última comida, ventana de alimentación, número de comidas, consistencia día a día y fines de semana vs entre semana.');
+  L.push('3. Relaciona consumo con peso semanal, pasos, entrenamiento y sueño cuando haya datos.');
+  L.push('4. Señala inconsistencias de captura (por ejemplo, kcal totales que no cuadran con los macros) y datos faltantes; no inventes datos.');
+  L.push('5. Da un máximo de 5 correcciones concretas y priorizadas para el plan o los hábitos, y una acción para hoy.');
+  L.push('Distingue lo medido de lo estimado. No des diagnósticos médicos; si algo requiere valoración profesional, dilo.');
+  L.push('');
+  L.push('## Resumen calculado por la app');
+  if(S.lines.length) S.lines.forEach(l=>L.push('- '+l[0]+': '+l[1])); else L.push('- Sin datos suficientes.');
+  L.push('');
+  L.push('## Observaciones automáticas (reglas simples, no son un diagnóstico)');
+  S.obs.forEach(o=>L.push('- '+o));
+  L.push('');
+  L.push('## Tabla diaria');
+  L.push('| Día | Fecha | Sem | Tipo | Kcal | P g | C g | G g | Comidas | 1ª | Última | Peso kg | Pasos | Sueño h |');
+  L.push('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
+  S.N.forEach(r=>{
+    L.push('| '+[r.n,r.k,r.wk,DAY_TYPES[r.dow].label,fx(r.kcal),fx(r.p),fx(r.c),fx(r.g),r.m.count||'',r.m.first,r.m.last,fx(r.peso,1),fx(r.pasos),r.sue?fx(r.sue/60,1):''].join(' | ')+' |');
+  });
+  L.push('');
+  L.push('## Detalle de comidas por día (hora y descripción)');
+  S.N.forEach(r=>{
+    L.push('- Día '+r.n+' ('+DIAS_ES[r.dow]+' '+r.k+')'+(r.kcal!==null?' — '+Math.round(r.kcal)+' kcal':'')+': '+(r.m.count ? r.m.ms.map(c=>(c.hora||'--:--')+' '+(c.desc||'')).join('; ') : 'sin comidas detalladas')+(r.e.notas?' · nota: '+r.e.notas:''));
+  });
+  return L.join('\n');
+}
+
+document.getElementById('btnAI').addEventListener('click', ()=>{
+  const S = alimCompute(), m = document.getElementById('aiMsg');
+  if(!S.N.length){ m.textContent='Aún no hay kcal ni comidas registradas.'; setTimeout(()=>m.textContent='',2500); return; }
+  dlFile('historial-alimentacion-para-IA-'+todayKey+'.md', buildMD(S), 'text/markdown');
+  m.textContent='Archivo para IA descargado ✓'; setTimeout(()=>m.textContent='',2500);
+});
+document.getElementById('btnCSV').addEventListener('click', ()=>{
+  const S = alimCompute(), m = document.getElementById('aiMsg');
+  if(!S.N.length){ m.textContent='Aún no hay kcal ni comidas registradas.'; setTimeout(()=>m.textContent='',2500); return; }
+  dlFile('historial-alimentacion-'+todayKey+'.csv', buildCSV(S), 'text/csv');
+  m.textContent='Tabla CSV descargada ✓'; setTimeout(()=>m.textContent='',2500);
+});
 
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
