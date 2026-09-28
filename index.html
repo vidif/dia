@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plan 49 días — César</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#12141a; --surface:#1b1f27; --surface2:#232838; --border:#2a303c;
+  --text:#edebe6; --muted:#8a93a3;
+  --fuerza:#d4a24e; --cardio:#4fa8a0; --descanso:#6b7280; --ok:#6fa97d;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.5}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:760px;margin:0 auto;padding:28px 20px 60px}
+.hero{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:6px}
+.day-num{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:48px;line-height:1;letter-spacing:-1px}
+.hero-meta{flex:1;min-width:180px}
+.hero-date{color:var(--muted);font-size:14px;text-transform:capitalize}
+.hero-obj{font-size:14px;margin-top:8px;color:var(--text)}
+.badge{display:inline-block;margin-top:6px;padding:5px 12px;border-radius:5px;font-size:14px;font-weight:600}
+.badge.fuerza{background:rgba(212,162,78,.15);color:var(--fuerza)}
+.badge.cardio{background:rgba(79,168,160,.15);color:var(--cardio)}
+.badge.descanso{background:rgba(107,114,128,.18);color:#aab1bd}
+.deload{color:var(--fuerza);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin:0 0 12px}
+.protocolo p{margin:0 0 8px;font-size:15px}
+.protocolo p:last-child{margin-bottom:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{background:var(--surface2);border-radius:6px;padding:10px 12px}
+.stat .v{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px}
+.stat .l{color:var(--muted);font-size:12px;margin-top:2px}
+.check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.check:last-child{border-bottom:none}
+.check input[type=checkbox]{width:20px;height:20px;accent-color:var(--ok);flex-shrink:0}
+.check label{flex:1;font-size:15px}
+.check input[type=number]{width:70px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-family:'IBM Plex Mono',monospace}
+textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:10px;font-family:inherit;font-size:14px;resize:vertical;min-height:60px;margin-top:6px}
+.saved{font-size:13px;color:var(--ok);height:18px;margin-top:8px}
+.grid49{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px}
+.d{aspect-ratio:1;border-radius:4px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;position:relative;cursor:pointer}
+.d.done{background:var(--ok);color:#0e1510;font-weight:600}
+.d.today{outline:2px solid var(--text)}
+.d.selected{outline:2px solid var(--fuerza)}
+.d.deloadday{box-shadow:inset 0 0 0 1px var(--fuerza)}
+.wk-avg{font-size:13px;color:var(--muted);margin-top:14px}
+.explorer-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.explorer-nav button{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 14px;font-size:14px;cursor:pointer;font-family:inherit}
+.explorer-nav button:disabled{opacity:.35;cursor:default}
+.explorer-title{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;text-align:center;flex:1}
+.explorer-date{color:var(--muted);font-size:13px;margin-bottom:10px;text-transform:capitalize}
+.cuidados{margin:10px 0 0;padding-left:18px;font-size:14px;color:var(--muted)}
+.cuidados li{margin-bottom:4px}
+.reg-label{margin-top:14px;margin-bottom:2px;font-size:13px;color:var(--muted)}
+.future-flag{margin-bottom:10px;font-size:13px;color:var(--fuerza)}
+.today-jump{font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer;white-space:nowrap}
+.settings{margin-top:24px;font-size:13px;color:var(--muted)}
+.settings a{color:var(--muted);text-decoration:underline;cursor:pointer}
+.meal-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.meal-row input[type=time]{background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 8px;font-family:'IBM Plex Mono',monospace;width:100px}
+.meal-row input[type=text]{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 10px;font-family:inherit}
+.meal-row button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}
+.addmeal{background:none;border:1px dashed var(--border);color:var(--muted);border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:2px}
+.sched-row{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.sched-row div{flex:1;min-width:110px}
+.sched-row label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.sched-row input[type=time]{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:8px;font-family:'IBM Plex Mono',monospace}
+.subhead{font-size:13px;color:var(--muted);margin:16px 0 6px;font-weight:600}
+.subhead:first-child{margin-top:0}
+.an-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px;gap:12px}
+.an-row:last-child{border-bottom:none}
+.an-row .l{color:var(--muted)}
+.an-row .v{font-family:'IBM Plex Mono',monospace;text-align:right}
+.an-note{font-size:13px;color:var(--muted);margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.chip{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 11px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer}
+.chip.on{background:rgba(111,169,125,.18);border-color:var(--ok);color:var(--ok)}
+@media (max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}.day-num{font-size:38px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="day-num mono" id="dayNum">DÍA —</div>
+    <div class="hero-meta">
+      <div class="hero-date" id="dateStr"></div>
+      <div id="badgeWrap"></div>
+      <div class="hero-obj" id="heroObj"></div>
+    </div>
+    <span class="today-jump" id="jumpToday">ir a hoy</span>
+  </div>
+
+  <div class="card">
+    <h2>Objetivo de alimentación (todos los días)</h2>
+    <div class="stats">
+      <div class="stat"><div class="v">1,800</div><div class="l">kcal</div></div>
+      <div class="stat"><div class="v">160g</div><div class="l">proteína</div></div>
+      <div class="stat"><div class="v">70-75g</div><div class="l">grasa</div></div>
+      <div class="stat"><div class="v">115-125g</div><div class="l">carbohidrato</div></div>
+      <div class="stat"><div class="v">25-30g</div><div class="l">fibra</div></div>
+      <div class="stat"><div class="v">2.5-3L</div><div class="l">agua</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Registro y detalle del día</h2>
+    <div class="explorer-nav">
+      <button id="prevDay">‹ anterior</button>
+      <div class="explorer-title" id="expTitle"></div>
+      <button id="nextDay">siguiente ›</button>
+    </div>
+    <div class="explorer-date" id="expDate"></div>
+    <div id="expBadge"></div>
+    <div id="expProtocolo" class="protocolo"></div>
+    <ul class="cuidados" id="expCuidados"></ul>
+    <div id="futureFlag"></div>
+    <div class="reg-label">Check-in de este día</div>
+    <div id="regFields"></div>
+
+    <div class="subhead">Comidas del día (hora + qué comiste)</div>
+    <div id="mealRows"></div>
+    <button class="addmeal" id="addMeal" type="button">+ agregar comida</button>
+
+    <div class="subhead">Horarios de entrenamiento</div>
+    <div class="sched-row" id="trainSched"></div>
+
+    <div class="subhead">Sueño de anoche</div>
+    <div class="sched-row">
+      <div><label for="horaDormir">Anoche me dormí a las</label><input type="time" id="horaDormir"></div>
+      <div><label for="horaDespertar">Hoy me levanté a las</label><input type="time" id="horaDespertar"></div>
+    </div>
+    <div class="an-note" id="sleepCalc" style="margin:0 0 10px;color:var(--text);font-size:14px"></div>
+    <div class="reg-label">Calidad del sueño (1 = muy mala, 5 = excelente)</div>
+    <div class="chips" id="chipsCalidad"></div>
+    <div class="reg-label" style="margin-top:0">Veces que me desperté en la noche</div>
+    <div class="chips" id="chipsDesp"></div>
+    <input type="hidden" id="calidadSueno"><input type="hidden" id="despertares">
+
+    <textarea id="notas" placeholder="Notas del día (hambre, energía, algo a ajustar)"></textarea>
+    <div class="saved" id="savedMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Análisis de comportamiento y hábitos</h2>
+    <div id="analisisBox"></div>
+    <div class="an-note">Calculado sobre los días con datos guardados. Son promedios y rangos descriptivos de tu propio registro, no un diagnóstico.</div>
+  </div>
+
+  <div class="card">
+    <h2>Análisis de sueño</h2>
+    <div id="suenoBox"></div>
+    <div class="an-note">Cada registro es la noche que terminó esa mañana. Meta de referencia de tu plan: 7–9 h. Horarios "consistentes" = rango de hasta 60 min entre noches.</div>
+  </div>
+
+  <div class="card">
+    <h2>Semana 4 — descarga</h2>
+    <p style="margin:0;color:var(--muted);font-size:14px">Sube a mantenimiento (tu TDEE estimado, no 1,800 kcal) y baja el volumen de pesas ~30% durante toda esa semana. Es parte del plan, no un fallo.</p>
+  </div>
+
+  <div class="card">
+    <h2>Progreso — 49 días</h2>
+    <div class="grid49" id="grid49"></div>
+    <div class="wk-avg" id="wkAvg"></div>
+  </div>
+
+  <div class="card">
+    <h2>Respaldo de tus registros</h2>
+    <p style="margin:0 0 12px;font-size:14px;color:var(--muted)">Descarga un archivo con todo tu seguimiento para no perderlo, o cárgalo de nuevo si cambias de dispositivo o de sitio.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="btnExport" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 16px;font-size:14px;cursor:pointer;font-family:inherit">Descargar respaldo (.json)</button>
+      <label for="fileImport" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 16px;font-size:14px;cursor:pointer;font-family:inherit">Cargar respaldo</label>
+      <input type="file" id="fileImport" accept="application/json" style="display:none">
+    </div>
+    <div class="saved" id="backupMsg"></div>
+  </div>
+
+  <div class="settings">
+    Día 1 del plan: <input type="date" id="startInput" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:5px 8px;font-family:'IBM Plex Mono',monospace;font-size:13px"> · tus registros no se borran al cambiarlo
+  </div>
+
+</div>
+
+<script>
+const DAY_TYPES = {
+  1:{type:'fuerza',label:'Fuerza + cardio',hasCardio:true,text:['Pesas: prioriza ejercicios multiarticulares, progresión de carga.','Después de pesas: 25-35 min de caminata inclinada a intensidad moderada (puedes conversar).']},
+  2:{type:'fuerza',label:'Solo fuerza',hasCardio:false,text:['Pesas: prioriza ejercicios multiarticulares, progresión de carga.','Sin cardio adicional hoy.']},
+  3:{type:'cardio',label:'Cardio (caminata inclinada)',hasCardio:true,text:['45-60 min de caminata inclinada a intensidad moderada.','Puede dividirse en dos bloques (ej. 30+30 min) si es más práctico.']},
+  4:{type:'fuerza',label:'Fuerza + cardio',hasCardio:true,text:['Pesas: prioriza ejercicios multiarticulares, progresión de carga.','Después de pesas: 25-35 min de caminata inclinada a intensidad moderada.']},
+  5:{type:'fuerza',label:'Solo fuerza',hasCardio:false,text:['Pesas: prioriza ejercicios multiarticulares, progresión de carga.','Sin cardio adicional hoy.']},
+  6:{type:'cardio',label:'Cardio (caminata inclinada)',hasCardio:true,text:['45-60 min de caminata inclinada a intensidad moderada.','Hoy también toca medir cintura (mismas condiciones que siempre).']},
+  0:{type:'descanso',label:'Descanso',hasCardio:false,text:['Sin entrenamiento.','Prioriza sueño y recuperación.']}
+};
+const CUIDADOS = {
+  fuerza:['No entrenar al fallo en cada serie: controla la fatiga, no la busques.','Sube carga solo si completas el rango alto de reps con buena técnica dos sesiones seguidas.','Si tu fuerza cae varias sesiones seguidas, revisa déficit, sueño y carbohidratos antes de asumir que es normal.'],
+  cardio:['Intensidad moderada: debes poder mantener una conversación.','No lo conviertas en otro entrenamiento duro; el objetivo es gasto energético con bajo costo de recuperación.','Si el día de piernas fue muy demandante, baja intensidad o duración.'],
+  descanso:['Sin entrenamiento hoy: es parte del plan, no una pausa que "recuperar".','Aprovecha para cuidar sueño (última comida 8pm, pantallas 10pm).']
+};
+
+function loadState(){
+  try{ return JSON.parse(localStorage.getItem('plan49')||'{}'); }catch(e){ return {}; }
+}
+function saveState(s){
+  try{ localStorage.setItem('plan49', JSON.stringify(s)); }catch(e){}
+}
+function lk(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+let state = loadState();
+if(!state.start){ state.start = lk(new Date()); state.checkins = {}; saveState(state); }
+if(!state.checkins) state.checkins = {};
+if(!state.tzFixed){ state.tzFixed = true; const t0 = lk(new Date()); if(state.start > t0) state.start = t0; saveState(state); }
+
+const start = new Date(state.start+'T00:00:00');
+const today = new Date(); today.setHours(0,0,0,0);
+const dayNum = Math.round((today - start)/86400000) + 1;
+const todayKey = lk(today);
+const OBJ = {
+  1:'Pesas + 25–35 min de caminata inclinada',
+  2:'Solo pesas, sin cardio',
+  3:'45–60 min de caminata inclinada',
+  4:'Pesas + 25–35 min de caminata inclinada',
+  5:'Solo pesas, sin cardio',
+  6:'45–60 min de caminata inclinada + medir cintura',
+  0:'Descanso y recuperación (medir cintura)'
+};
+document.getElementById('startInput').value = state.start;
+
+function dayKeyFor(n){
+  const d = new Date(start); d.setDate(d.getDate()+n-1);
+  return lk(d);
+}
+function dayDateFor(n){
+  const d = new Date(start); d.setDate(d.getDate()+n-1);
+  return d;
+}
+
+let expDay = Math.min(Math.max(dayNum,1),49);
+let currentComidas = [];
+let currentKey = todayKey;
+
+function timeToMin(t){ if(!t) return null; const p=t.split(':'); return (+p[0])*60+(+p[1]); }
+function minToTime(m){ m=((Math.round(m)%1440)+1440)%1440; const h=Math.floor(m/60), mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+
+const FIELD_IDS = ['cPeso','vPeso','cPasos','vPasos','cCardio','vCardioMin','cEntreno','cKcal','cSueno','vSueno','cCintura','vCintura','horaPesas','horaCardio','horaDormir','horaDespertar','calidadSueno','despertares'];
+
+function persist(key){
+  const e = {};
+  FIELD_IDS.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    e[id] = el.type==='checkbox' ? el.checked : el.value;
+  });
+  const notas = document.getElementById('notas');
+  e.notas = notas ? notas.value : '';
+  e.comidas = currentComidas.filter(c=>c.hora||c.desc);
+  state.checkins[key] = e;
+  saveState(state);
+  const msg = document.getElementById('savedMsg');
+  msg.textContent = 'Guardado ✓';
+  clearTimeout(window._t); window._t = setTimeout(()=>msg.textContent='',1500);
+  updateSleepCalc();
+  renderGrid();
+  renderAnalisis();
+}
+
+function renderMeals(){
+  const box = document.getElementById('mealRows');
+  box.innerHTML = currentComidas.map((c,i)=>
+    '<div class="meal-row">'+
+      '<input type="time" data-i="'+i+'" data-f="hora" value="'+(c.hora||'')+'">'+
+      '<input type="text" data-i="'+i+'" data-f="desc" placeholder="qué comiste" value="'+(c.desc||'').replace(/"/g,'&quot;')+'">'+
+      '<button type="button" data-rm="'+i+'">×</button>'+
+    '</div>'
+  ).join('');
+  box.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const i = +inp.dataset.i, f = inp.dataset.f;
+      currentComidas[i][f] = inp.value;
+      persist(currentKey);
+    });
+  });
+  box.querySelectorAll('button[data-rm]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      currentComidas.splice(+btn.dataset.rm,1);
+      renderMeals();
+      persist(currentKey);
+    });
+  });
+}
+
+function renderDay(n){
+  const d = dayDateFor(n);
+  const key = dayKeyFor(n);
+  const type = DAY_TYPES[d.getDay()];
+  const weekOf = Math.ceil(n/7);
+  const isDeloadWeek = weekOf===4;
+  const isSunday = d.getDay()===0;
+  const includesCardio = type.hasCardio;
+
+  document.getElementById('dayNum').textContent = 'DÍA ' + n;
+  document.getElementById('dateStr').textContent = d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + (n===dayNum ? ' · hoy' : (n<dayNum ? ' · día pasado' : ' · día futuro'));
+  document.getElementById('badgeWrap').innerHTML = '<span class="badge '+type.type+'">'+type.label+'</span>';
+  document.getElementById('heroObj').textContent = 'Objetivo del día: ' + OBJ[d.getDay()];
+
+  document.getElementById('expTitle').textContent = 'Día '+n+' · semana '+weekOf+(isDeloadWeek?' (descarga)':'');
+  document.getElementById('expDate').textContent = d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('expBadge').innerHTML = '<span class="badge '+type.type+'">'+type.label+'</span>';
+
+  let protocolo = type.text.slice();
+  if(isDeloadWeek && type.type==='fuerza') protocolo.push('Esta semana es de descarga: baja el volumen de pesas ~30% y sube a mantenimiento en calorías.');
+  document.getElementById('expProtocolo').innerHTML = protocolo.map(t=>'<p>'+t+'</p>').join('');
+  document.getElementById('expCuidados').innerHTML = CUIDADOS[type.type].map(c=>'<li>'+c+'</li>').join('');
+  document.getElementById('futureFlag').innerHTML = n>dayNum ? '<div class="future-flag">Día futuro — puedes revisar o dejar planeado, se guarda igual.</div>' : '';
+
+  const e = state.checkins[key] || {};
+  let fieldsHtml = '';
+  fieldsHtml += '<div class="check"><input type="checkbox" id="cPeso"><label for="cPeso">Peso en ayunas</label><input type="number" step="0.1" id="vPeso" placeholder="kg"></div>';
+  fieldsHtml += '<div class="check"><input type="checkbox" id="cPasos"><label for="cPasos">Pasos del día</label><input type="number" id="vPasos" placeholder="#"></div>';
+  if(includesCardio){
+    fieldsHtml += '<div class="check"><input type="checkbox" id="cCardio"><label for="cCardio">Caminata inclinada cumplida</label><input type="number" id="vCardioMin" placeholder="min"></div>';
+  }
+  fieldsHtml += '<div class="check"><input type="checkbox" id="cEntreno"><label for="cEntreno">'+(type.type==='descanso'?'Descanso cumplido':'Entrenamiento de pesas cumplido')+'</label></div>';
+  fieldsHtml += '<div class="check"><input type="checkbox" id="cKcal"><label for="cKcal">Calorías y proteína en objetivo</label></div>';
+  fieldsHtml += '<div class="check"><input type="checkbox" id="cSueno"><label for="cSueno">Palancas de sueño cumplidas</label><input type="number" step="0.5" id="vSueno" placeholder="h"></div>';
+  if(isSunday){
+    fieldsHtml += '<div class="check"><input type="checkbox" id="cCintura"><label for="cCintura">Cintura medida</label><input type="number" step="0.5" id="vCintura" placeholder="cm"></div>';
+  }
+  document.getElementById('regFields').innerHTML = fieldsHtml;
+
+  currentKey = key;
+  let schedHtml = '';
+  if(type.type==='fuerza') schedHtml += '<div><label for="horaPesas">Hora de pesas</label><input type="time" id="horaPesas"></div>';
+  if(includesCardio) schedHtml += '<div><label for="horaCardio">Hora de caminata</label><input type="time" id="horaCardio"></div>';
+  document.getElementById('trainSched').innerHTML = schedHtml || '<div class="an-note" style="margin:0">Sin entrenamiento hoy — aprovecha para dormir bien.</div>';
+
+  currentComidas = (e.comidas || []).map(c=>({hora:c.hora||'',desc:c.desc||''}));
+  renderMeals();
+
+  ['cPeso','vPeso','cPasos','vPasos','cCardio','vCardioMin','cEntreno','cKcal','cSueno','vSueno','cCintura','vCintura','horaPesas','horaCardio','horaDormir','horaDespertar','calidadSueno','despertares'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el || e[id]===undefined) return;
+    if(el.type==='checkbox') el.checked = e[id]; else el.value = e[id];
+  });
+  document.getElementById('notas').value = e.notas || '';
+  ['horaDormir','horaDespertar','calidadSueno','despertares'].forEach(id=>{ document.getElementById(id).value = e[id] || ''; });
+  updateSleepCalc();
+
+  document.querySelectorAll('#regFields input, #trainSched input').forEach(el=>{
+    el.addEventListener('change', ()=>persist(key));
+  });
+  document.getElementById('horaDormir').onchange = ()=>{ updateSleepCalc(); persist(key); };
+  document.getElementById('horaDespertar').onchange = ()=>{ updateSleepCalc(); persist(key); };
+  document.getElementById('notas').oninput = ()=>persist(key);
+
+  document.getElementById('prevDay').disabled = n<=1;
+  document.getElementById('nextDay').disabled = n>=49;
+  renderGrid();
+  renderAnalisis();
+}
+
+function renderGrid(){
+  const grid = document.getElementById('grid49');
+  grid.innerHTML = '';
+  for(let i=1;i<=49;i++){
+    const key = dayKeyFor(i);
+    const e = state.checkins[key];
+    const isToday = key===todayKey;
+    const isSelected = i===expDay;
+    const isDeload = Math.ceil(i/7)===4;
+    const done = e && (e.cPeso || e.cEntreno || e.cKcal);
+    const div = document.createElement('div');
+    div.className = 'd'+(done?' done':'')+(isToday?' today':'')+(isSelected?' selected':'')+(isDeload?' deloadday':'');
+    div.textContent = i;
+    div.addEventListener('click', ()=>{ expDay = i; renderDay(expDay); document.getElementById('expTitle').scrollIntoView({behavior:'smooth',block:'center'}); });
+    grid.appendChild(div);
+  }
+  const weekOfExp = Math.ceil(expDay/7);
+  const weekStartIdx = (weekOfExp-1)*7+1;
+  let sum=0,count=0;
+  for(let i=weekStartIdx;i<weekStartIdx+7;i++){
+    const e = state.checkins[dayKeyFor(i)];
+    if(e && e.vPeso){ sum += parseFloat(e.vPeso); count++; }
+  }
+  document.getElementById('wkAvg').textContent = count ? ('Promedio de peso semana '+weekOfExp+': '+(sum/count).toFixed(1)+' kg ('+count+' registro'+(count>1?'s':'')+')') : 'Semana '+weekOfExp+': aún sin pesos registrados.';
+}
+
+renderDay(expDay);
+
+document.getElementById('addMeal').addEventListener('click', ()=>{
+  currentComidas.push({hora:'',desc:''});
+  renderMeals();
+});
+
+function timeStats(arr){
+  const mins = arr.filter(Boolean).map(timeToMin);
+  if(!mins.length) return null;
+  const avg = mins.reduce((a,b)=>a+b,0)/mins.length;
+  const range = Math.max(...mins)-Math.min(...mins);
+  return {avg:minToTime(avg), range, n:mins.length};
+}
+function rowStat(label, stat, extra){
+  if(!stat) return '<div class="an-row"><span class="l">'+label+'</span><span class="v">sin datos</span></div>';
+  const tag = stat.range<=60 ? 'consistente' : 'variable';
+  return '<div class="an-row"><span class="l">'+label+'</span><span class="v">'+stat.avg+(extra||'')+' · '+tag+' (rango '+stat.range+' min, n='+stat.n+')</span></div>';
+}
+
+function sleepDur(e){
+  if(!e||!e.horaDormir||!e.horaDespertar) return null;
+  let d = timeToMin(e.horaDespertar)-timeToMin(e.horaDormir);
+  if(d<=0) d+=1440;
+  return d;
+}
+function fmtDur(m){ return Math.floor(m/60)+' h '+String(Math.round(m%60)).padStart(2,'0')+' min'; }
+function updateSleepCalc(){
+  document.querySelectorAll('.chip[data-target]').forEach(ch=>{
+    const t = document.getElementById(ch.dataset.target);
+    ch.classList.toggle('on', !!t && t.value===ch.dataset.val);
+  });
+  const d = sleepDur({horaDormir:document.getElementById('horaDormir').value,horaDespertar:document.getElementById('horaDespertar').value});
+  document.getElementById('sleepCalc').textContent = d ? 'Dormiste '+fmtDur(d)+(d<420?' · por debajo de tu meta de 7–9 h':d>540?' · por encima de 9 h':' · dentro de tu meta de 7–9 h') : 'Captura hora de dormir y de levantarte para calcular cuánto dormiste.';
+}
+function initSleepChips(){
+  const defs = [
+    ['chipsCalidad','calidadSueno',['1','2','3','4','5']],
+    ['chipsDesp','despertares',['0','1','2','3','4']]
+  ];
+  defs.forEach(function(def){
+    const cid=def[0], tid=def[1], opts=def[2];
+    const box = document.getElementById(cid);
+    box.innerHTML = opts.map(o=>'<button type="button" class="chip" data-target="'+tid+'" data-val="'+o+'">'+((tid==='despertares'&&o==='4')?'4+':o)+'</button>').join('');
+    box.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click', ()=>{
+      const t = document.getElementById(tid);
+      const toggle = (tid==='calidadSueno' || tid==='despertares');
+      t.value = (toggle && t.value===ch.dataset.val) ? '' : ch.dataset.val;
+      persist(currentKey);
+    }));
+  });
+  updateSleepCalc();
+}
+function renderSueno(){
+  const box = document.getElementById('suenoBox');
+  const rows = [];
+  for(let i=1;i<=49;i++){
+    const e = state.checkins[dayKeyFor(i)];
+    const d = sleepDur(e);
+    if(d) rows.push({i,d,bed:timeToMin(e.horaDormir),wake:timeToMin(e.horaDespertar),ok:!!e.cSueno,dow:dayDateFor(i).getDay(),q:parseFloat(e.calidadSueno),w:parseFloat(e.despertares)});
+  }
+  if(!rows.length){ box.innerHTML = '<div class="an-note" style="margin:0">Registra hora de dormir y de levantarte para ver tu análisis de sueño.</div>'; return; }
+  const avg = a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const rng = a=>Math.max(...a)-Math.min(...a);
+  const tag = r=>r<=60?'consistente':'variable';
+  const line = (l,v)=>'<div class="an-row"><span class="l">'+l+'</span><span class="v">'+v+'</span></div>';
+  const n = rows.length, durs = rows.map(r=>r.d);
+  const beds = rows.map(r=>r.bed<720?r.bed+1440:r.bed);
+  const wakes = rows.map(r=>r.wake);
+  const inRange = rows.filter(r=>r.d>=420&&r.d<=540).length;
+  let h = '';
+  h += line('Noches registradas', n);
+  h += line('Duración promedio', fmtDur(avg(durs)));
+  h += line('Noches en 7–9 h', inRange+' de '+n+' ('+Math.round(100*inRange/n)+'%)');
+  h += line('Noches < 7 h / > 9 h', rows.filter(r=>r.d<420).length+' / '+rows.filter(r=>r.d>540).length);
+  h += line('Más corta / más larga', fmtDur(Math.min(...durs))+' / '+fmtDur(Math.max(...durs)));
+  h += line('Hora de dormir (promedio)', minToTime(avg(beds))+' · '+tag(rng(beds))+' (rango '+rng(beds)+' min)');
+  h += line('Hora de levantarte (promedio)', minToTime(avg(wakes))+' · '+tag(rng(wakes))+' (rango '+rng(wakes)+' min)');
+  const qs = rows.map(r=>r.q).filter(x=>!isNaN(x)), ws = rows.map(r=>r.w).filter(x=>!isNaN(x));
+  if(qs.length) h += line('Calidad promedio', avg(qs).toFixed(1)+' / 5 (n='+qs.length+')');
+  if(ws.length) h += line('Despertares nocturnos (promedio)', avg(ws).toFixed(1)+' por noche (n='+ws.length+')');
+  const wk = rows.filter(r=>r.dow>=1&&r.dow<=5), we = rows.filter(r=>r.dow===0||r.dow===6);
+  if(wk.length&&we.length) h += line('Despertar lun–vie / sáb–dom', fmtDur(avg(wk.map(r=>r.d)))+' / '+fmtDur(avg(we.map(r=>r.d))));
+  const ok = rows.filter(r=>r.ok), no = rows.filter(r=>!r.ok);
+  if(ok.length&&no.length) h += line('Con / sin palancas de sueño', fmtDur(avg(ok.map(r=>r.d)))+' / '+fmtDur(avg(no.map(r=>r.d))));
+  const byWeek = {};
+  rows.forEach(r=>{ const w = Math.ceil(r.i/7); (byWeek[w] = byWeek[w]||[]).push(r.d); });
+  Object.keys(byWeek).forEach(w=>{ h += line('Semana '+w, fmtDur(avg(byWeek[w]))+' ('+byWeek[w].length+' noche'+(byWeek[w].length>1?'s':'')+')'); });
+  const bars = rows.map(r=>{
+    const hh = Math.min(100,Math.round(r.d/600*100));
+    const c = (r.d>=420&&r.d<=540)?'var(--ok)':'var(--fuerza)';
+    return '<div title="Día '+r.i+': '+fmtDur(r.d)+'" style="flex:1;min-width:4px;height:'+hh+'%;background:'+c+';border-radius:2px 2px 0 0"></div>';
+  }).join('');
+  h += '<div class="subhead">Duración por noche (verde = 7–9 h)</div><div style="display:flex;align-items:flex-end;gap:3px;height:70px">'+bars+'</div>';
+  box.innerHTML = h;
+}
+
+function renderAnalisis(){
+  renderSueno();
+  const box = document.getElementById('analisisBox');
+  const entries = Object.values(state.checkins);
+  const hasAny = entries.some(e=>e && (e.vPeso||e.cEntreno||e.cKcal||(e.comidas&&e.comidas.length)));
+  if(!hasAny){ box.innerHTML = '<div class="an-note" style="margin:0">Aún no hay suficientes registros para el análisis.</div>'; return; }
+
+  const elapsed = Math.max(1, Math.min(dayNum,49));
+  const adhEntreno = Math.round(100*entries.filter(e=>e&&e.cEntreno).length/elapsed);
+  const adhKcal = Math.round(100*entries.filter(e=>e&&e.cKcal).length/elapsed);
+  const adhSueno = Math.round(100*entries.filter(e=>e&&e.cSueno).length/elapsed);
+
+  const primeras=[], ultimas=[];
+  entries.forEach(e=>{
+    if(e && e.comidas && e.comidas.length){
+      const mins = e.comidas.map(c=>timeToMin(c.hora)).filter(m=>m!==null);
+      if(mins.length){ primeras.push(minToTime(Math.min(...mins))); ultimas.push(minToTime(Math.max(...mins))); }
+    }
+  });
+
+  const durSueno = [];
+  entries.forEach(e=>{
+    if(e && e.horaDormir && e.horaDespertar){
+      let dur = timeToMin(e.horaDespertar) - timeToMin(e.horaDormir);
+      if(dur<=0) dur += 1440;
+      durSueno.push(dur);
+    }
+  });
+  const durAvg = durSueno.length ? (durSueno.reduce((a,b)=>a+b,0)/durSueno.length/60).toFixed(1)+' h' : null;
+
+  let html = '';
+  html += '<div class="an-row"><span class="l">Adherencia a entrenamiento</span><span class="v">'+adhEntreno+'% de los días transcurridos</span></div>';
+  html += '<div class="an-row"><span class="l">Adherencia a calorías/proteína</span><span class="v">'+adhKcal+'% de los días transcurridos</span></div>';
+  html += '<div class="an-row"><span class="l">Adherencia a palancas de sueño</span><span class="v">'+adhSueno+'% de los días transcurridos</span></div>';
+  html += rowStat('Primera comida (promedio)', timeStats(primeras));
+  html += rowStat('Última comida (promedio)', timeStats(ultimas));
+  html += rowStat('Hora de pesas (promedio)', timeStats(entries.map(e=>e&&e.horaPesas)));
+  html += rowStat('Hora de caminata (promedio)', timeStats(entries.map(e=>e&&e.horaCardio)));
+  box.innerHTML = html;
+}
+renderAnalisis();
+
+initSleepChips();
+
+document.getElementById('prevDay').addEventListener('click', ()=>{ if(expDay>1){expDay--; renderDay(expDay);} });
+document.getElementById('nextDay').addEventListener('click', ()=>{ if(expDay<49){expDay++; renderDay(expDay);} });
+document.getElementById('jumpToday').addEventListener('click', ()=>{ expDay = Math.min(Math.max(dayNum,1),49); renderDay(expDay); });
+
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'plan49-respaldo-'+todayKey+'.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  const m = document.getElementById('backupMsg');
+  m.textContent = 'Respaldo descargado ✓';
+  setTimeout(()=>m.textContent='',2000);
+});
+
+document.getElementById('fileImport').addEventListener('change', (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const m = document.getElementById('backupMsg');
+    try{
+      const imported = JSON.parse(reader.result);
+      if(!imported || !imported.start || typeof imported.checkins!=='object'){
+        m.textContent = 'Archivo no válido.';
+        return;
+      }
+      if(confirm('Esto reemplaza tus registros actuales en este dispositivo con los del respaldo. ¿Continuar?')){
+        saveState(imported);
+        location.reload();
+      }
+    }catch(e){
+      m.textContent = 'No se pudo leer el archivo.';
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('startInput').addEventListener('change', (ev)=>{
+  const v = ev.target.value;
+  if(!v) { ev.target.value = state.start; return; }
+  if(confirm('Esto cambia el día 1 del plan a '+v+'. Tus registros guardados no se borran. ¿Continuar?')){
+    state.start = v;
+    saveState(state);
+    location.reload();
+  } else { ev.target.value = state.start; }
+});
+</script>
+</body>
+</html>
